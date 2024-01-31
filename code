@@ -1,0 +1,179 @@
+%% Calculator of the required dynamic bearing capacity
+
+clc
+clear all
+
+disp('Welcome to the bearing dynamic load capacity calculator'); 
+
+% Get bearing operating time from the user
+Lnh_str = input('Enter the bearing operating time [h]: ', 's');
+Lnh = str2double(Lnh_str);
+
+% Get revolutions per minute from the user
+n_str = input('Enter the number of revolutions per minute: ', 's');
+n = str2double(n_str);
+
+% Get radial force (force perpendicular to the shaft) from the user
+Fr_str = input('Enter the radial force [N] (force perpendicular to the shaft): ', 's');
+Fr = str2double(Fr_str);
+
+% Get axial force (force parallel to the shaft) from the user
+Fa_str = input('Enter the axial force [N] (force parallel to the shaft): ', 's');
+Fa = str2double(Fa_str);
+
+% User's decision on the selection of the bearing type
+
+typ = input("Which bearing type did you choose (ball, roller, needle_rollers)  ","s");
+    switch (typ)
+        case 'ball'
+             wykladnik= 3;                  % łożyska kulkowe
+        case 'roller'
+            wykladnik = 10/3;               % łożysko walcowe
+        case 'needle_rollers'
+            wykladnik = 10/3;               % łożysko igiełkowe
+    end
+
+
+% User's decision on the operating temperature
+
+temperatura = input("At what temperature will the bearing operate? (max 350°C; input just the number)  ","s");
+    if temperatura <= 120
+        ft = 1;
+    elseif temperatura >= 120 && temperatura <= 150
+        ft = 0.9;
+    elseif temperatura >= 150 && temperatura <= 200
+        ft = 0.8;
+    elseif temperatura >= 200 && temperatura <= 250
+        ft = 0.7;
+    elseif temperatura >= 250 && temperatura <= 300
+        ft = 0.6;
+    elseif temperatura >= 300 && temperatura <= 350
+        ft = 0.5;
+    end
+
+
+% User's decision on the difficulty of work (depends on vibration)
+
+  obciazenia = input("What will the working conditions be like? (calm, normal, hard; depending on vibration)  ","s");
+    switch (obciazenia)
+        case 'calm'
+            fw = 1.1; 
+        case 'normal'
+            fw = 1.35; 
+        case 'hard'
+            fw = 2;     
+    end
+
+
+% User's decision about reliability
+
+   niezawodnosc = input("what reliability the bearing should have? (90, 95, 96, 97, 98, 99)  ","s");
+    switch (niezawodnosc) 
+        case '90'
+            alfa = 1; 
+        case '95'
+            alfa = 0.62; 
+        case '96'
+           alfa = 0.52; 
+        case '97'
+            alfa = 0.44; 
+        case '98'
+            alfa = 0.33; 
+        case '99'
+            alfa = 0.21; 
+    end
+
+
+% User decision on load case factor
+
+   wspolczynnik = input("Is the shaft movable or is the shaft housing movable? (shaft, shaft_housing )  ","s");
+    switch (wspolczynnik)
+        case 'shaft'
+            V = 1; 
+        case 'shaft_housing '
+            V= 1.2; 
+    end
+
+    X = 1; Y = 0;
+
+    
+% Wywołanie funkcji
+
+C = nosnosc_dynamiczna(X, V, Fr, Y, Fa, alfa, n, ft, fw, wykladnik, Lnh);
+
+
+wsp = (Fa/C);
+e = (Fa * Fr)/C;
+
+if (Fa/Fr) <= e;
+
+    clc 
+
+    % Display the input values
+    disp(['Bearing operating time [h]: ', Lnh_str, ' hours']);
+    disp(['Revolutions per minute:     ', n_str]);
+    disp(['Radial force:               ', Fr_str, ' N']);
+    disp(['Axial force:                ', Fa_str, ' N']);
+    disp(['Type of bearing :           ', typ]);
+    disp(['Operate temperature:        ', temperatura]);
+    disp(['Working conditions:         ', obciazenia]);
+    disp(['reliability the bearing:    ', niezawodnosc]);
+    disp(['Mobility:                   ', wspolczynnik]);
+
+disp(['The required value dynamic load capacity is (C): ', num2str(C)]);
+
+else                % (Fa/Fr) > e;
+    X = 0.56;
+    if (wsp) >= 0.56
+        Y = 1;
+    elseif (wsp) >= 0.42 && wsp <= 0.56
+            Y = 1.04;
+    elseif (wsp) >= 0.28 && wsp <= 0.42
+            Y = 1.15;
+    elseif (wsp) >= 0.17 && wsp <= 0.28
+            Y = 1.31;
+    elseif (wsp) >= 0.11 && wsp <= 0.17
+            Y = 1.45;
+    elseif (wsp) >= 0.084 && wsp <= 0.11
+            Y = 1.55;
+    elseif (wsp) >= 0.056 && wsp <= 0.084
+            Y = 1.71;
+    elseif (wsp) >= 0.028 && wsp <= 0.056
+            Y = 1.99;
+    else    (wsp) >= 0.014 && wsp <= 0.028
+            Y = 2.30;
+    end
+end 
+
+if (Fa/Fr) > e 
+
+% Wywołanie funkcji
+C = nosnosc_dynamiczna(X, V, Fr, Y, Fa, alfa, n, ft, fw, wykladnik, Lnh);
+clc
+    disp(['Bearing operating time [h]: ', Lnh_str, ' hours']);
+    disp(['Revolutions per minute:     ', n_str]);
+    disp(['Radial force:               ', Fr_str, ' N']);
+    disp(['Axial force:                ', Fa_str, ' N']);
+    disp(['Type of bearing :           ', typ]);
+    disp(['Operate temperature:        ', temperatura]);
+    disp(['Working conditions:         ', obciazenia]);
+    disp(['reliability the bearing:    ', niezawodnosc]);
+    disp(['Mobility:                   ', wspolczynnik]);
+
+disp(['The required value dynamic load capacity is (C): ', num2str(C)]);
+
+end
+
+
+function C = nosnosc_dynamiczna(X, V, Fr, Y, Fa, alfa, n, ft, fw, wykladnik, Lnh)
+
+    % Obliczenia obciążenia dynamicznego zastępczego (C)
+
+    P = X * V * Fr + Y * Fa;
+
+    % Równanie do rozwiązania
+
+    C = nthroot(((Lnh * 60 * n * (P * fw)^wykladnik)/ (alfa * 10^6)), 3)/ft;
+
+end
+
