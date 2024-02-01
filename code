@@ -176,5 +176,5 @@ function C = nosnosc_dynamiczna(X, V, Fr, Y, Fa, alfa, n, ft, fw, wykladnik, Lnh
     C = nthroot(((Lnh * 60 * n * (P * fw)^wykladnik)/ (alfa * 10^6)), 3)/ft;
 
 end
-end
+
 
